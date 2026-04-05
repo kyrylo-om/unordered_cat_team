@@ -7,16 +7,22 @@ import {
   useNodesState,
 } from "@xyflow/react";
 import "@xyflow/react/dist/style.css";
+import { BallNode } from "./BallNode";
 import { MovingTruckEdge } from "./MovingTruckEdge";
 
 const edgeTypes = {
   moving: MovingTruckEdge,
 };
 
+const nodeTypes = {
+  ball: BallNode,
+};
+
 function normalizeNode(node) {
   return {
     ...node,
     id: String(node.id),
+    type: "ball",
     data: node.data || {},
   };
 }
@@ -93,9 +99,11 @@ export function GraphMap({ staticNodes, staticEdges, nodeUpdate, edgeUpdate }) {
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
         edgeTypes={edgeTypes}
+        nodeTypes={nodeTypes}
         nodesDraggable={false}
         nodesConnectable={false}
         selectNodesOnDrag={false}
+        fitViewOptions={{ padding: 0.25, maxZoom: 0.8 }}
         fitView
       >
         <MiniMap/>

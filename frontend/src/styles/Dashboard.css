@@ -19,3 +19,48 @@
   overflow: hidden;
   background-color: #fff;
 }
+
+.graph-map .react-flow__handle {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.graph-map .react-flow__node {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  padding: 0;
+}
+
+.graph-map .graph-ball-node {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #0f766e;
+  border: 1px solid #ffffff;
+  box-shadow: 0 0 0 1px #115e59;
+  position: relative;
+}
+
+.graph-map .graph-ball-node__tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 8px);
+  transform: translateX(-50%) translateY(3px);
+  opacity: 0;
+  pointer-events: none;
+  white-space: nowrap;
+  background: rgba(15, 23, 42, 0.92);
+  color: #fff;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  line-height: 1;
+  transition: opacity 120ms ease, transform 120ms ease;
+  z-index: 10;
+}
+
+.graph-map .graph-ball-node:hover .graph-ball-node__tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
