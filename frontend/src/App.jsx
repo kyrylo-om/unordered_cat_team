@@ -1,4 +1,4 @@
-import { useAuth } from "./context/AuthContext";
+import { useAuth } from "./context/useAuth";
 import { LoginPage } from "./pages/LoginPage";
 import { MainPage } from "./pages/MainPage";
 import "./App.css";

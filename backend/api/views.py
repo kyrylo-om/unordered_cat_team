@@ -5,10 +5,38 @@ from django.contrib.auth import authenticate, login, logout
 from django_ratelimit.decorators import ratelimit
 import json
 
+from .models import MapLayout
+from .user_roles import get_user_role
+
 
 def hello(request):
     """Legacy endpoint for testing backend connectivity."""
     return JsonResponse({"message": "Hello from Django backend"})
+
+
+@require_http_methods(["GET"])
+def map_layout_view(request):
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Not authenticated"}, status=401)
+
+    layout = MapLayout.objects.filter(is_active=True).first()
+    if layout is None:
+        layout = MapLayout.objects.first()
+
+    if layout is None:
+        return JsonResponse({"nodes": [], "edges": []})
+
+    payload = layout.parsed_layout if isinstance(layout.parsed_layout, dict) else {}
+    nodes = payload.get("nodes", [])
+    edges = payload.get("edges", [])
+
+    return JsonResponse(
+        {
+            "nodes": nodes,
+            "edges": edges,
+            "layoutName": layout.name,
+        }
+    )
 
 
 @require_http_methods(["GET"])
@@ -49,6 +77,7 @@ def login_view(request):
                     "id": user.id,
                     "username": user.username,
                     "email": user.email,
+                    "role": get_user_role(user.id),
                 },
                 "csrfToken": token,
             }
@@ -72,6 +101,7 @@ def check_auth_view(request):
                 "id": user.id,
                 "username": user.username,
                 "email": user.email,
+                "role": get_user_role(user.id),
             }
         }
     )

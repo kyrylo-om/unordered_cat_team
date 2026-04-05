@@ -1,6 +1,5 @@
-import { createContext, useContext, useState, useEffect } from "react";
-
-const AuthContext = createContext();
+import { useState, useEffect } from "react";
+import { AuthContext } from "./authContextObject";
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
@@ -29,7 +28,7 @@ export function AuthProvider({ children }) {
         setUser(null);
         setIsAuthenticated(false);
       }
-    } catch (err) {
+    } catch {
       setUser(null);
       setIsAuthenticated(false);
       setError("Failed to check authentication status");
@@ -67,7 +66,7 @@ export function AuthProvider({ children }) {
         setError(data.error || "Login failed");
         return false;
       }
-    } catch (err) {
+    } catch {
       setError("An error occurred during login. Please try again.");
       return false;
     } finally {
@@ -89,7 +88,7 @@ export function AuthProvider({ children }) {
       setUser(null);
       setIsAuthenticated(false);
       setError("");
-    } catch (err) {
+    } catch {
       setError("Error during logout");
     } finally {
       setIsLoading(false);
@@ -112,12 +111,4 @@ export function AuthProvider({ children }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
 }
