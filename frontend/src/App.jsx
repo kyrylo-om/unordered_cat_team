@@ -1,34 +1,24 @@
-import { useEffect, useState } from 'react'
-import './App.css'
+import { useAuth } from "./context/AuthContext";
+import { LoginPage } from "./pages/LoginPage";
+import { MainPage } from "./pages/MainPage";
+import "./App.css";
 
-function App() {
-  const [message, setMessage] = useState('Loading...')
-  const [error, setError] = useState('')
+function AppContent() {
+  const { isLoading, isAuthenticated } = useAuth();
 
-  useEffect(() => {
-    async function loadMessage() {
-      try {
-        const response = await fetch('/api/hello/')
-        if (!response.ok) {
-          throw new Error('Request failed')
-        }
+  if (isLoading) {
+    return (
+      <div className="app-loading">
+        <p>Loading...</p>
+      </div>
+    );
+  }
 
-        const data = await response.json()
-        setMessage(data.message)
-      } catch {
-        setError('Could not reach Django backend')
-      }
-    }
+  if (!isAuthenticated) {
+    return <LoginPage />;
+  }
 
-    loadMessage()
-  }, [])
-
-  return (
-    <main className="app">
-      <h1>Django + React</h1>
-      <p>{error || message}</p>
-    </main>
-  )
+  return <MainPage />;
 }
 
-export default App
+export default AppContent;
