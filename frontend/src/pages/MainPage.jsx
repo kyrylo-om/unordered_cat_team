@@ -14,18 +14,22 @@ function resolveRole(user) {
     "";
   const role = String(value).toLowerCase();
 
-  if (role.includes("store") || role.includes("worker")) {
-    return "store";
+  if (role.includes("warehouse")) {
+    return "warehouse";
   }
 
-  return "manager";
+  if (role.includes("shop")) {
+    return "shop";
+  }
+
+  return "warehouse";
 }
 
 export function MainPage() {
   const { user } = useAuth();
   const role = resolveRole(user);
 
-  if (role === "store") {
+  if (role === "shop") {
     return (
       <div className="main-page store-layout">
         <header className="app-header">

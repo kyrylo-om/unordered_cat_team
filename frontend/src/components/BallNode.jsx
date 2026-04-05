@@ -10,9 +10,18 @@ function getNodeLabel(id, data) {
 
 export function BallNode({ id, data }) {
   const label = getNodeLabel(id, data);
+  const nodeType = data?.type || "shop";
+  const nodeClass =
+    nodeType === "warehouse"
+      ? "graph-ball-node--warehouse"
+      : "graph-ball-node--shop";
 
   return (
-    <div className="graph-ball-node" title={label} aria-label={label}>
+    <div
+      className={`graph-ball-node ${nodeClass}`}
+      title={label}
+      aria-label={label}
+    >
       <Handle type="target" position={Position.Top} />
       <Handle type="source" position={Position.Bottom} />
       <span className="graph-ball-node__tooltip">{label}</span>

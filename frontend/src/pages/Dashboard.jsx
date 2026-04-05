@@ -36,8 +36,75 @@ function buildSocketUrl(token) {
 }
 
 function parseLayoutPayload(payload) {
-  const nodes = Array.isArray(payload?.nodes) ? payload.nodes : [];
-  const edges = Array.isArray(payload?.edges) ? payload.edges : [];
+  const directNodes = Array.isArray(payload?.nodes) ? payload.nodes : [];
+  const directEdges = Array.isArray(payload?.edges) ? payload.edges : [];
+
+  if (directNodes.length || directEdges.length) {
+    return { nodes: directNodes, edges: directEdges };
+  }
+
+  const definition =
+    payload?.definition && typeof payload.definition === "object"
+      ? payload.definition
+      : payload;
+  const warehouses = Array.isArray(definition?.warehouses)
+    ? definition.warehouses
+    : [];
+  const shops = Array.isArray(definition?.shops) ? definition.shops : [];
+  const routes = Array.isArray(definition?.edges)
+    ? definition.edges
+    : Array.isArray(definition?.routes)
+      ? definition.routes
+      : Array.isArray(definition?.connections)
+        ? definition.connections
+        : [];
+
+  const nodes = [
+    ...warehouses.map((warehouse) => ({
+      id: warehouse.id ?? warehouse.nodeId ?? warehouse.node_id,
+      position: warehouse.position,
+      data: {
+        ...warehouse.data,
+        label: warehouse.name ?? warehouse.label ?? warehouse.data?.label,
+        type: warehouse.type ?? warehouse.data?.type ?? "warehouse",
+      },
+    })),
+    ...shops.map((shop) => ({
+      id: shop.id ?? shop.nodeId ?? shop.node_id,
+      position: shop.position,
+      data: {
+        ...shop.data,
+        label: shop.name ?? shop.label ?? shop.data?.label,
+        type: shop.type ?? shop.data?.type ?? "shop",
+        inventory: shop.inventory ?? shop.data?.inventory,
+      },
+    })),
+  ].filter((node) => node.id !== undefined && node.id !== null);
+
+  const edges = routes
+    .map((route, index) => {
+      const source =
+        route.source ??
+        route.from ??
+        route.fromId ??
+        route.from_id ??
+        route.start;
+      const target =
+        route.target ?? route.to ?? route.toId ?? route.to_id ?? route.end;
+
+      if (source === undefined || source === null || target === undefined || target === null) {
+        return null;
+      }
+
+      return {
+        ...route,
+        id: route.id ?? route.edgeId ?? route.edge_id ?? `edge-${index}`,
+        source,
+        target,
+      };
+    })
+    .filter(Boolean);
+
   return { nodes, edges };
 }
 
@@ -171,12 +238,12 @@ export function Dashboard() {
     return <p className="dashboard-state">Loading map...</p>;
   }
 
-  if (!layoutNodes.length && !layoutEdges.length) {
-    return <p className="dashboard-state">Map is not loaded</p>;
-  }
-
   if (error) {
     return <p className="dashboard-state">{error}</p>;
+  }
+
+  if (!layoutNodes.length && !layoutEdges.length) {
+    return <p className="dashboard-state">Map is not loaded</p>;
   }
 
   return (

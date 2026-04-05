@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import "../styles/StoreView.css";
 
-const STORE_STATUS_URL = import.meta.env.VITE_STORE_STATUS_URL || "/api/store/status";
-const STORE_DEMAND_URL = import.meta.env.VITE_STORE_DEMAND_URL || "/api/store/demand";
+const STORE_STATUS_URL =
+  import.meta.env.VITE_STORE_STATUS_URL || "/api/store/status";
+const STORE_DEMAND_URL =
+  import.meta.env.VITE_STORE_DEMAND_URL || "/api/store/demand";
 
 const DEMAND_LEVELS = [
   { value: "normal", label: "Normal" },
@@ -10,24 +12,16 @@ const DEMAND_LEVELS = [
   { value: "critical", label: "Critical" },
 ];
 
-function getAuthToken() {
-  return localStorage.getItem("accessToken") || localStorage.getItem("token") || "";
-}
-
-function getAuthHeaders() {
-  const token = getAuthToken();
-  if (!token) {
-    return {};
-  }
-  return { Authorization: `Bearer ${token}` };
-}
-
 function normalizeDemand(value) {
   const normalized = String(value || "normal").toLowerCase();
   if (normalized === "critical") {
     return "critical";
   }
-  if (normalized === "elevated" || normalized === "high" || normalized === "increased") {
+  if (
+    normalized === "elevated" ||
+    normalized === "high" ||
+    normalized === "increased"
+  ) {
     return "elevated";
   }
   return "normal";
@@ -49,9 +43,6 @@ export function StoreView() {
       try {
         const response = await fetch(STORE_STATUS_URL, {
           method: "GET",
-          headers: {
-            ...getAuthHeaders(),
-          },
           credentials: "include",
         });
 
@@ -84,7 +75,6 @@ export function StoreView() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...getAuthHeaders(),
         },
         body: JSON.stringify({ demandLevel: normalized }),
         credentials: "include",

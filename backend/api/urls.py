@@ -7,6 +7,9 @@ from .views import (
     check_auth_view,
     logout_view,
     map_layout_view,
+    store_status_view,
+    store_demand_view,
+    change_password_view,
 )
 
 urlpatterns = [
@@ -16,4 +19,7 @@ urlpatterns = [
     path("auth/login/", login_view),
     path("auth/check/", check_auth_view),
     path("auth/logout/", logout_view),
+    path("auth/change-password/", change_password_view),
+    path("store/status", store_status_view),
+    path("store/demand", store_demand_view),
 ]

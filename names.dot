@@ -1,21 +1,46 @@
-graph Names {
-    місто Яготин -- селище Збараж [distance=1.98];
-    селище Збараж -- село Дружківка [distance=7.99];
-    селище Збараж -- село Снятин [distance=6.02];
-    місто Олександрівськ -- селище Збараж [distance=9.85];
-    місто Ірпінь -- хутір Тлумач [distance=3.21];
-    місто Отаманівка -- місто Рахів [distance=1.02];
-    місто Рахів -- хутір Олешки [distance=9.89];
-    місто Любомль -- місто Сорокине [distance=9.51];
-    село Нова Одеса -- хутір Гірське [distance=6.79];
-    місто Любомль -- село Попасна [distance=6.2];
-    село Попасна -- хутір Тлумач [distance=4.95];
-    місто Мирноград -- село Попасна [distance=6.78];
-    місто Любомль -- місто Отаманівка [distance=8.06];
-    місто Приморськ -- село Дружківка [distance=5.42];
-    село Дружківка -- хутір Новоселиця [distance=4.64];
-    місто Яготин -- село Нова Одеса [distance=7.55];
-    місто Олевськ -- хутір Зоринськ [distance=1.32];
-    місто Любомль -- місто Яготин [distance=2.34];
-    місто Любомль -- хутір Зоринськ [distance=8.53];
+graph Distribution {
+    "Yahotyn Warehouse" [label="Yahotyn Warehouse", type="warehouse"];
+    "Zbarazh Hub" [label="Zbarazh Hub", type="warehouse"];
+    "Druzkhivka Store" [label="Druzkhivka Store", type="shop"];
+    "Sniatyn Shop" [label="Sniatyn Shop", type="shop"];
+
+    "Aleksandrivsk Store" [label="Aleksandrivsk Store", type="shop"];
+    "Irpin Store" [label="Irpin Store", type="shop"];
+    "Tlumaсh Hub" [label="Tlumaсh Hub", type="warehouse"];
+    "Otamanivka Store" [label="Otamanivka Store", type="shop"];
+
+    "Rakhiv Store" [label="Rakhiv Store", type="shop"];
+    "Oleshky Shop" [label="Oleshky Shop", type="shop"];
+    "Liuboml Central" [label="Liuboml Central", type="warehouse"];
+    "Sorokyne Store" [label="Sorokyne Store", type="shop"];
+
+    "Nova Odesa Shop" [label="Nova Odesa Shop", type="shop"];
+    "Hirske Shop" [label="Hirske Shop", type="shop"];
+    "Popasna Hub" [label="Popasna Hub", type="warehouse"];
+    "Myrnohrad Store" [label="Myrnohrad Store", type="shop"];
+
+    "Promorsk Store" [label="Promorsk Store", type="shop"];
+    "Novoselytsia Shop" [label="Novoselytsia Shop", type="shop"];
+    "Olevsk Store" [label="Olevsk Store", type="shop"];
+    "Zorinskyi Shop" [label="Zorinskyi Shop", type="shop"];
+
+    "Yahotyn Warehouse" -- "Zbarazh Hub" [distance=7.55];
+    "Zbarazh Hub" -- "Druzkhivka Store" [distance=7.99];
+    "Zbarazh Hub" -- "Sniatyn Shop" [distance=6.02];
+    "Aleksandrivsk Store" -- "Zbarazh Hub" [distance=9.85];
+    "Irpin Store" -- "Tlumaсh Hub" [distance=3.21];
+    "Otamanivka Store" -- "Rakhiv Store" [distance=1.02];
+    "Rakhiv Store" -- "Oleshky Shop" [distance=9.89];
+    "Liuboml Central" -- "Sorokyne Store" [distance=9.51];
+    "Nova Odesa Shop" -- "Hirske Shop" [distance=6.79];
+    "Liuboml Central" -- "Popasna Hub" [distance=6.2];
+    "Popasna Hub" -- "Tlumaсh Hub" [distance=4.95];
+    "Myrnohrad Store" -- "Popasna Hub" [distance=6.78];
+    "Liuboml Central" -- "Otamanivka Store" [distance=8.06];
+    "Promorsk Store" -- "Druzkhivka Store" [distance=5.42];
+    "Druzkhivka Store" -- "Novoselytsia Shop" [distance=4.64];
+    "Yahotyn Warehouse" -- "Nova Odesa Shop" [distance=7.55];
+    "Olevsk Store" -- "Zorinskyi Shop" [distance=1.32];
+    "Liuboml Central" -- "Yahotyn Warehouse" [distance=2.34];
+    "Liuboml Central" -- "Zorinskyi Shop" [distance=8.53];
 }

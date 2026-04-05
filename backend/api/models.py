@@ -1,57 +1,109 @@
 from django.db import models
+from django.utils import timezone
+from django.contrib.auth.models import User
 from django.core.validators import FileExtensionValidator
+import json
 
-from .layout_parser import parse_dot_to_react_flow
+
+class NetworkDefinition(models.Model):
+    """
+    JSON-based network definition for creating warehouses and shops.
+    All users created from this network share the same password.
+    """
+    name = models.CharField(max_length=255, unique=True)
+    json_file = models.FileField(
+        upload_to="network_definitions/",
+        validators=[FileExtensionValidator(allowed_extensions=["json"])],
+        help_text="JSON file defining warehouses and shops"
+    )
+    definition = models.JSONField(default=dict, blank=True)
+    shared_password = models.CharField(
+        max_length=255,
+        default="DefaultPassword123!",
+        help_text="Shared password for all users in this network"
+    )
+    parse_error = models.TextField(blank=True, default="")
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["-updated_at"]
+
+    def __str__(self):
+        return self.name
 
 
-class MapLayout(models.Model):
-	name = models.CharField(max_length=120)
-	dot_file = models.FileField(
-		upload_to="map_layouts/",
-		validators=[FileExtensionValidator(allowed_extensions=["dot"])],
-	)
-	parsed_layout = models.JSONField(default=dict, blank=True)
-	is_active = models.BooleanField(default=True)
-	parse_error = models.TextField(blank=True, default="")
-	created_at = models.DateTimeField(auto_now_add=True)
-	updated_at = models.DateTimeField(auto_now=True)
+class Warehouse(models.Model):
+    name = models.CharField(max_length=255)
+    node_id = models.CharField(max_length=50)
+    network_definition = models.ForeignKey(NetworkDefinition, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, null=True, blank=True, unique=True
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-	class Meta:
-		ordering = ["-updated_at"]
+    class Meta:
+        unique_together = [["network_definition", "node_id"]]
+        indexes = [
+            models.Index(fields=["user_id"]),
+            models.Index(fields=["network_definition_id"]),
+        ]
 
-	def __str__(self):
-		return self.name
+    def __str__(self):
+        return f"{self.name} (Warehouse)"
 
-	def save(self, *args, **kwargs):
-		previous_file_name = None
-		if self.pk:
-			previous = type(self).objects.filter(pk=self.pk).only("dot_file").first()
-			if previous and previous.dot_file:
-				previous_file_name = previous.dot_file.name
 
-		super().save(*args, **kwargs)
+class Shop(models.Model):
+    name = models.CharField(max_length=255)
+    node_id = models.CharField(max_length=50)
+    network_definition = models.ForeignKey(NetworkDefinition, on_delete=models.CASCADE, null=True, blank=True)
+    user = models.OneToOneField(
+        User, on_delete=models.CASCADE, null=True, blank=True, unique=True
+    )
+    inventory = models.PositiveIntegerField(default=0)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
-		should_parse = (
-			not self.parsed_layout
-			or (self.dot_file and self.dot_file.name != previous_file_name)
-		)
+    class Meta:
+        unique_together = [["network_definition", "node_id"]]
+        indexes = [
+            models.Index(fields=["user_id"]),
+            models.Index(fields=["network_definition_id"]),
+        ]
 
-		updates = {}
-		if should_parse:
-			try:
-				layout = parse_dot_to_react_flow(self.dot_file.path)
-				updates["parsed_layout"] = layout
-				updates["parse_error"] = ""
-			except Exception as exc:
-				updates["parsed_layout"] = {"nodes": [], "edges": []}
-				updates["parse_error"] = str(exc)
+    def __str__(self):
+        return f"{self.name} (Shop)"
 
-		if self.is_active:
-			type(self).objects.exclude(pk=self.pk).filter(is_active=True).update(
-				is_active=False
-			)
 
-		if updates:
-			type(self).objects.filter(pk=self.pk).update(**updates)
-			for key, value in updates.items():
-				setattr(self, key, value)
+class WarehouseCredential(models.Model):
+    warehouse = models.ForeignKey(Warehouse, on_delete=models.CASCADE)
+    username = models.CharField(max_length=150)
+    password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    def is_expired(self):
+        if self.expires_at is None:
+            return False  # No expiration
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"{self.username} ({self.warehouse.name})"
+
+
+class ShopCredential(models.Model):
+    shop = models.ForeignKey(Shop, on_delete=models.CASCADE)
+    username = models.CharField(max_length=150)
+    password = models.CharField(max_length=255)
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField(null=True, blank=True)
+
+    def is_expired(self):
+        if self.expires_at is None:
+            return False  # No expiration
+        return timezone.now() > self.expires_at
+
+    def __str__(self):
+        return f"{self.username} ({self.shop.name})"

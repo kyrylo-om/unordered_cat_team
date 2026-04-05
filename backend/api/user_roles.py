@@ -1,24 +1,24 @@
 from django.db import connection
 
-ROLE_MANAGER = "manager"
-ROLE_STORE_WORKER = "store_worker"
+ROLE_WAREHOUSE_WORKER = "warehouse_worker"
+ROLE_SHOP_WORKER = "shop_worker"
 
 ROLE_CHOICES = (
-    (ROLE_MANAGER, "Manager"),
-    (ROLE_STORE_WORKER, "Store Worker"),
+    (ROLE_WAREHOUSE_WORKER, "Warehouse Worker"),
+    (ROLE_SHOP_WORKER, "Shop Worker"),
 )
 
-DEFAULT_ROLE = ROLE_MANAGER
+DEFAULT_ROLE = ROLE_SHOP_WORKER
 
 
 def normalize_role(value):
     role = str(value or "").strip().lower()
 
-    if role in {"manager", "dispatcher"}:
-        return ROLE_MANAGER
+    if role in {"warehouse", "warehouse_worker", "warehouseworker"}:
+        return ROLE_WAREHOUSE_WORKER
 
-    if role in {"store", "worker", "store_worker", "storeworker"}:
-        return ROLE_STORE_WORKER
+    if role in {"shop", "shop_worker", "shopworker", "worker", "store", "store_worker"}:
+        return ROLE_SHOP_WORKER
 
     return DEFAULT_ROLE
 
