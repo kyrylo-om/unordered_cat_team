@@ -17,22 +17,38 @@ function getAuthHeaders() {
   return { Authorization: `Bearer ${token}` };
 }
 
-function buildSocketUrl(token) {
-  if (MANAGER_WS_URL) {
-    if (!token) {
-      return MANAGER_WS_URL;
-    }
-    const separator = MANAGER_WS_URL.includes("?") ? "&" : "?";
-    return `${MANAGER_WS_URL}${separator}token=${encodeURIComponent(token)}`;
-  }
-
-  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
-  const baseUrl = `${protocol}://${window.location.host}/ws/manager-dashboard/`;
+function withToken(url, token) {
   if (!token) {
-    return baseUrl;
+    return url;
   }
 
-  return `${baseUrl}?token=${encodeURIComponent(token)}`;
+  const separator = url.includes("?") ? "&" : "?";
+  return `${url}${separator}token=${encodeURIComponent(token)}`;
+}
+
+function getSocketUrls(token) {
+  const protocol = window.location.protocol === "https:" ? "wss" : "ws";
+  const urls = [];
+
+  if (MANAGER_WS_URL) {
+    urls.push(withToken(MANAGER_WS_URL, token));
+  }
+
+  urls.push(withToken(`${protocol}://${window.location.host}/ws/manager-dashboard/`, token));
+
+  if (import.meta.env.DEV) {
+    urls.push(
+      withToken(`${protocol}://127.0.0.1:8000/ws/manager-dashboard/`, token),
+    );
+    urls.push(
+      withToken(
+        `${protocol}://${window.location.hostname}:8000/ws/manager-dashboard/`,
+        token,
+      ),
+    );
+  }
+
+  return Array.from(new Set(urls));
 }
 
 function parseLayoutPayload(payload) {
@@ -158,7 +174,7 @@ function normalizeEdgeUpdate(payload) {
   };
 }
 
-export function Dashboard() {
+export function Dashboard({ onEventLog, onTick, onElementSelect, onElementPatch }) {
   const [layoutNodes, setLayoutNodes] = useState([]);
   const [layoutEdges, setLayoutEdges] = useState([]);
   const [nodeUpdate, setNodeUpdate] = useState(null);
@@ -201,20 +217,38 @@ export function Dashboard() {
   }, []);
 
   useEffect(() => {
-    const token = getAuthToken();
-    const socketUrl = buildSocketUrl(token);
-    const socket = new WebSocket(socketUrl);
+    if (isLoading || error) {
+      return undefined;
+    }
 
-    socket.onmessage = (event) => {
+    const token = getAuthToken();
+    const socketUrls = getSocketUrls(token);
+
+    let isDisposed = false;
+    let activeSocket = null;
+    let retryTimer = null;
+    let reconnectAttempt = 0;
+
+    const handleMessage = (event) => {
       try {
         const message = JSON.parse(event.data);
         const eventType = message.type || message.event;
         const payload = message.payload || message.data || message;
 
+        if (eventType === "SNAPSHOT") {
+          const layout = parseLayoutPayload(payload);
+          setLayoutNodes(layout.nodes);
+          setLayoutEdges(layout.edges);
+          return;
+        }
+
         if (eventType === "NODE_UPDATE") {
           const update = normalizeNodeUpdate(payload);
           if (update) {
             setNodeUpdate({ ...update, stamp: Date.now() + Math.random() });
+            if (typeof onElementPatch === "function") {
+              onElementPatch({ kind: "node", id: update.id, data: update.data || {} });
+            }
           }
         }
 
@@ -222,17 +256,76 @@ export function Dashboard() {
           const update = normalizeEdgeUpdate(payload);
           if (update) {
             setEdgeUpdate({ ...update, stamp: Date.now() + Math.random() });
+            if (typeof onElementPatch === "function") {
+              onElementPatch({ kind: "edge", id: update.id, data: update.data || {} });
+            }
           }
+        }
+
+        if (eventType === "EVENT_LOG" && typeof onEventLog === "function") {
+          onEventLog(payload);
+        }
+
+        if (eventType === "TICK" && typeof onTick === "function") {
+          onTick(payload);
         }
       } catch {
         return;
       }
     };
 
-    return () => {
-      socket.close();
+    const connectWithFallback = (startIndex = 0) => {
+      if (isDisposed) {
+        return;
+      }
+
+      const socketUrl = socketUrls[startIndex];
+      if (!socketUrl) {
+        return;
+      }
+
+      const socket = new WebSocket(socketUrl);
+      activeSocket = socket;
+
+      socket.onopen = () => {
+        reconnectAttempt = 0;
+      };
+
+      socket.onmessage = handleMessage;
+
+      socket.onerror = () => {
+        socket.close();
+      };
+
+      socket.onclose = () => {
+        if (isDisposed) {
+          return;
+        }
+
+        if (startIndex + 1 < socketUrls.length) {
+          connectWithFallback(startIndex + 1);
+          return;
+        }
+
+        const retryDelayMs = Math.min(5000, 500 * 2 ** reconnectAttempt);
+        reconnectAttempt += 1;
+        retryTimer = window.setTimeout(() => connectWithFallback(0), retryDelayMs);
+      };
     };
-  }, []);
+
+    connectWithFallback(0);
+
+    return () => {
+      isDisposed = true;
+      if (retryTimer) {
+        window.clearTimeout(retryTimer);
+      }
+
+      if (activeSocket && activeSocket.readyState <= WebSocket.OPEN) {
+        activeSocket.close();
+      }
+    };
+  }, [isLoading, error, onEventLog, onTick, onElementPatch]);
 
   if (isLoading) {
     return <p className="dashboard-state">Loading map...</p>;
@@ -253,6 +346,11 @@ export function Dashboard() {
         staticEdges={layoutEdges}
         nodeUpdate={nodeUpdate}
         edgeUpdate={edgeUpdate}
+        onNodeSelect={onElementSelect}
+        onEdgeSelect={onElementSelect}
+        onSelectionClear={() =>
+          typeof onElementSelect === "function" ? onElementSelect(null) : null
+        }
       />
     </div>
   );

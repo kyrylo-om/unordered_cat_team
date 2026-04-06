@@ -86,6 +86,7 @@ def parse_network_json(json_file_path):
 
         warehouse_id = warehouse.get("id")
         warehouse_name = warehouse.get("name", str(warehouse_id))
+        warehouse_inventory = warehouse.get("inventory", warehouse.get("initial_stock", 500))
         warehouse_position = _normalize_position(
             warehouse.get("position", warehouse.get("location")),
             f"warehouses[{idx}].position",
@@ -94,9 +95,17 @@ def parse_network_json(json_file_path):
         if not warehouse_id:
             raise ValueError(f"Warehouse at index {idx} missing 'id' field")
 
+        try:
+            inventory = int(warehouse_inventory)
+        except (ValueError, TypeError):
+            raise ValueError(
+                f"Warehouse '{warehouse_id}' inventory must be a number, got {warehouse_inventory}"
+            )
+
         warehouse_item = {
             "id": str(warehouse_id),
             "name": str(warehouse_name),
+            "inventory": max(0, inventory),
         }
         if warehouse_position is not None:
             warehouse_item["position"] = warehouse_position
@@ -116,6 +125,9 @@ def parse_network_json(json_file_path):
         shop_id = shop.get("id")
         shop_name = shop.get("name", str(shop_id))
         shop_inventory = shop.get("inventory", 0)
+        # Shops start from zero planning inputs and workers set them later via StoreView.
+        shop_target = 0
+        shop_demand_rate = 0
         shop_position = _normalize_position(
             shop.get("position", shop.get("location")),
             f"shops[{idx}].position",
@@ -131,10 +143,15 @@ def parse_network_json(json_file_path):
                 f"Shop '{shop_id}' inventory must be a number, got {shop_inventory}"
             )
 
+        target = int(shop_target)
+        demand_rate = int(shop_demand_rate)
+
         shop_item = {
             "id": str(shop_id),
             "name": str(shop_name),
             "inventory": max(0, inventory),
+            "target": max(0, target),
+            "demand_rate": max(0, demand_rate),
         }
         if shop_position is not None:
             shop_item["position"] = shop_position

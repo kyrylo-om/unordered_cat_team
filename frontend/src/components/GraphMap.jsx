@@ -151,9 +151,52 @@ function normalizeEdge(edge) {
   };
 }
 
-export function GraphMap({ staticNodes, staticEdges, nodeUpdate, edgeUpdate }) {
+export function GraphMap({
+  staticNodes,
+  staticEdges,
+  nodeUpdate,
+  edgeUpdate,
+  onNodeSelect,
+  onEdgeSelect,
+  onSelectionClear,
+}) {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+
+  function handleNodeClick(_event, node) {
+    if (typeof onNodeSelect !== "function") {
+      return;
+    }
+
+    onNodeSelect({
+      kind: "node",
+      id: String(node.id),
+      data: node.data || {},
+      position: node.position || { x: 0, y: 0 },
+    });
+  }
+
+  function handleEdgeClick(_event, edge) {
+    if (typeof onEdgeSelect !== "function") {
+      return;
+    }
+
+    onEdgeSelect({
+      kind: "edge",
+      id: String(edge.id),
+      source: String(edge.source),
+      target: String(edge.target),
+      data: edge.data || {},
+    });
+  }
+
+  function handlePaneClick() {
+    if (typeof onSelectionClear !== "function") {
+      return;
+    }
+
+    onSelectionClear();
+  }
 
   useEffect(() => {
     const normalizedNodes = staticNodes.map(normalizeNode);
@@ -219,6 +262,9 @@ export function GraphMap({ staticNodes, staticEdges, nodeUpdate, edgeUpdate }) {
         edges={edges}
         onNodesChange={onNodesChange}
         onEdgesChange={onEdgesChange}
+        onNodeClick={handleNodeClick}
+        onEdgeClick={handleEdgeClick}
+        onPaneClick={handlePaneClick}
         edgeTypes={edgeTypes}
         nodeTypes={nodeTypes}
         nodesDraggable={false}

@@ -1,0 +1,604 @@
+{
+  "name": "Distribution Network",
+  "warehouses": [
+    {
+      "id": "city_hansenton",
+      "name": "City Hansenton",
+      "position": {
+        "x": 741,
+        "y": 532
+      }
+    },
+    {
+      "id": "city_east_stephanie",
+      "name": "City East Stephanie",
+      "position": {
+        "x": 690,
+        "y": 297
+      }
+    },
+    {
+      "id": "city_roberttown",
+      "name": "City Roberttown",
+      "position": {
+        "x": 146,
+        "y": 253
+      }
+    }
+  ],
+  "shops": [
+    {
+      "id": "village_lake_bridgetburgh",
+      "name": "Village Lake Bridgetburgh",
+      "inventory": 69,
+      "position": {
+        "x": 428,
+        "y": 642
+      }
+    },
+    {
+      "id": "village_west_michaelville",
+      "name": "Village West Michaelville",
+      "inventory": 110,
+      "position": {
+        "x": 209,
+        "y": 332
+      }
+    },
+    {
+      "id": "village_new_erikaland",
+      "name": "Village New Erikaland",
+      "inventory": 53,
+      "position": {
+        "x": 866,
+        "y": 476
+      }
+    },
+    {
+      "id": "village_north_thomas",
+      "name": "Village North Thomas",
+      "inventory": 64,
+      "position": {
+        "x": 924,
+        "y": 318
+      }
+    },
+    {
+      "id": "village_kaylafurt",
+      "name": "Village Kaylafurt",
+      "inventory": 133,
+      "position": {
+        "x": 184,
+        "y": 115
+      }
+    },
+    {
+      "id": "village_samanthahaven",
+      "name": "Village Samanthahaven",
+      "inventory": 136,
+      "position": {
+        "x": 70,
+        "y": 557
+      }
+    },
+    {
+      "id": "village_lake_angela",
+      "name": "Village Lake Angela",
+      "inventory": 71,
+      "position": {
+        "x": 345,
+        "y": 548
+      }
+    },
+    {
+      "id": "village_huangburgh",
+      "name": "Village Huangburgh",
+      "inventory": 128,
+      "position": {
+        "x": 316,
+        "y": 71
+      }
+    },
+    {
+      "id": "village_jenkinsfort",
+      "name": "Village Jenkinsfort",
+      "inventory": 75,
+      "position": {
+        "x": 614,
+        "y": 538
+      }
+    },
+    {
+      "id": "village_new_brittany",
+      "name": "Village New Brittany",
+      "inventory": 70,
+      "position": {
+        "x": 929,
+        "y": 208
+      }
+    },
+    {
+      "id": "village_south_julieville",
+      "name": "Village South Julieville",
+      "inventory": 66,
+      "position": {
+        "x": 512,
+        "y": 566
+      }
+    },
+    {
+      "id": "village_ericmouth",
+      "name": "Village Ericmouth",
+      "inventory": 105,
+      "position": {
+        "x": 105,
+        "y": 712
+      }
+    },
+    {
+      "id": "village_new_pamela",
+      "name": "Village New Pamela",
+      "inventory": 53,
+      "position": {
+        "x": 904,
+        "y": 705
+      }
+    },
+    {
+      "id": "village_south_rebeccaland",
+      "name": "Village South Rebeccaland",
+      "inventory": 127,
+      "position": {
+        "x": 77,
+        "y": 438
+      }
+    },
+    {
+      "id": "village_new_jennifer",
+      "name": "Village New Jennifer",
+      "inventory": 61,
+      "position": {
+        "x": 880,
+        "y": 108
+      }
+    },
+    {
+      "id": "village_port_hannahview",
+      "name": "Village Port Hannahview",
+      "inventory": 108,
+      "position": {
+        "x": 288,
+        "y": 647
+      }
+    },
+    {
+      "id": "village_benjaminstad",
+      "name": "Village Benjaminstad",
+      "inventory": 91,
+      "position": {
+        "x": 597,
+        "y": 680
+      }
+    },
+    {
+      "id": "village_lake_kimberlymouth",
+      "name": "Village Lake Kimberlymouth",
+      "inventory": 63,
+      "position": {
+        "x": 805,
+        "y": 374
+      }
+    },
+    {
+      "id": "village_davisborough",
+      "name": "Village Davisborough",
+      "inventory": 57,
+      "position": {
+        "x": 517,
+        "y": 431
+      }
+    },
+    {
+      "id": "village_hendersonhaven",
+      "name": "Village Hendersonhaven",
+      "inventory": 97,
+      "position": {
+        "x": 704,
+        "y": 676
+      }
+    },
+    {
+      "id": "village_sarahland",
+      "name": "Village Sarahland",
+      "inventory": 68,
+      "position": {
+        "x": 442,
+        "y": 216
+      }
+    },
+    {
+      "id": "village_lake_elaine",
+      "name": "Village Lake Elaine",
+      "inventory": 59,
+      "position": {
+        "x": 710,
+        "y": 143
+      }
+    },
+    {
+      "id": "village_east_micheal",
+      "name": "Village East Micheal",
+      "inventory": 127,
+      "position": {
+        "x": 368,
+        "y": 329
+      }
+    },
+    {
+      "id": "village_leebury",
+      "name": "Village Leebury",
+      "inventory": 146,
+      "position": {
+        "x": 292,
+        "y": 238
+      }
+    },
+    {
+      "id": "village_dustinhaven",
+      "name": "Village Dustinhaven",
+      "inventory": 140,
+      "position": {
+        "x": 600,
+        "y": 196
+      }
+    },
+    {
+      "id": "village_michaelton",
+      "name": "Village Michaelton",
+      "inventory": 144,
+      "position": {
+        "x": 624,
+        "y": 50
+      }
+    },
+    {
+      "id": "village_johnchester",
+      "name": "Village Johnchester",
+      "inventory": 130,
+      "position": {
+        "x": 410,
+        "y": 449
+      }
+    },
+    {
+      "id": "village_andersonmouth",
+      "name": "Village Andersonmouth",
+      "inventory": 54,
+      "position": {
+        "x": 519,
+        "y": 124
+      }
+    },
+    {
+      "id": "village_south_christopher",
+      "name": "Village South Christopher",
+      "inventory": 83,
+      "position": {
+        "x": 254,
+        "y": 504
+      }
+    },
+    {
+      "id": "village_south_ryan",
+      "name": "Village South Ryan",
+      "inventory": 133,
+      "position": {
+        "x": 67,
+        "y": 67
+      }
+    }
+  ],
+  "routes": [
+    {
+      "from": "city_hansenton",
+      "to": "village_jenkinsfort",
+      "time": 1,
+      "cost": 3.8,
+      "distance": 3.8
+    },
+    {
+      "from": "city_hansenton",
+      "to": "village_new_erikaland",
+      "time": 4,
+      "cost": 3.8,
+      "distance": 4.7
+    },
+    {
+      "from": "city_east_stephanie",
+      "to": "village_dustinhaven",
+      "time": 2,
+      "cost": 1.3,
+      "distance": 2.4
+    },
+    {
+      "from": "city_east_stephanie",
+      "to": "village_lake_kimberlymouth",
+      "time": 4,
+      "cost": 3.9,
+      "distance": 3.3
+    },
+    {
+      "from": "city_roberttown",
+      "to": "village_west_michaelville",
+      "time": 1,
+      "cost": 3.1,
+      "distance": 2.4
+    },
+    {
+      "from": "city_roberttown",
+      "to": "village_kaylafurt",
+      "time": 1,
+      "cost": 1.2,
+      "distance": 3.1
+    },
+    {
+      "from": "village_lake_bridgetburgh",
+      "to": "village_south_julieville",
+      "time": 3,
+      "cost": 4.3,
+      "distance": 3.7
+    },
+    {
+      "from": "village_lake_bridgetburgh",
+      "to": "village_lake_angela",
+      "time": 4,
+      "cost": 4.3,
+      "distance": 4.9
+    },
+    {
+      "from": "village_west_michaelville",
+      "to": "village_leebury",
+      "time": 3,
+      "cost": 1.4,
+      "distance": 2.0
+    },
+    {
+      "from": "village_new_erikaland",
+      "to": "village_lake_kimberlymouth",
+      "time": 4,
+      "cost": 4.4,
+      "distance": 1.3
+    },
+    {
+      "from": "village_north_thomas",
+      "to": "village_new_brittany",
+      "time": 1,
+      "cost": 1.2,
+      "distance": 1.0
+    },
+    {
+      "from": "village_north_thomas",
+      "to": "village_lake_kimberlymouth",
+      "time": 4,
+      "cost": 1.5,
+      "distance": 1.9
+    },
+    {
+      "from": "village_kaylafurt",
+      "to": "village_south_ryan",
+      "time": 3,
+      "cost": 2.0,
+      "distance": 4.9
+    },
+    {
+      "from": "village_kaylafurt",
+      "to": "village_huangburgh",
+      "time": 1,
+      "cost": 2.7,
+      "distance": 2.1
+    },
+    {
+      "from": "village_samanthahaven",
+      "to": "village_south_rebeccaland",
+      "time": 4,
+      "cost": 4.7,
+      "distance": 1.4
+    },
+    {
+      "from": "village_samanthahaven",
+      "to": "village_ericmouth",
+      "time": 4,
+      "cost": 3.9,
+      "distance": 2.9
+    },
+    {
+      "from": "village_lake_angela",
+      "to": "village_south_christopher",
+      "time": 2,
+      "cost": 4.3,
+      "distance": 3.0
+    },
+    {
+      "from": "village_lake_angela",
+      "to": "village_port_hannahview",
+      "time": 5,
+      "cost": 4.1,
+      "distance": 4.6
+    },
+    {
+      "from": "village_huangburgh",
+      "to": "village_leebury",
+      "time": 5,
+      "cost": 2.5,
+      "distance": 4.5
+    },
+    {
+      "from": "village_jenkinsfort",
+      "to": "village_south_julieville",
+      "time": 5,
+      "cost": 3.3,
+      "distance": 4.1
+    },
+    {
+      "from": "village_new_brittany",
+      "to": "village_new_jennifer",
+      "time": 5,
+      "cost": 4.2,
+      "distance": 4.3
+    },
+    {
+      "from": "village_ericmouth",
+      "to": "village_port_hannahview",
+      "time": 4,
+      "cost": 4.7,
+      "distance": 4.3
+    },
+    {
+      "from": "village_new_pamela",
+      "to": "village_hendersonhaven",
+      "time": 1,
+      "cost": 2.6,
+      "distance": 1.9
+    },
+    {
+      "from": "village_new_pamela",
+      "to": "village_new_erikaland",
+      "time": 3,
+      "cost": 3.6,
+      "distance": 4.8
+    },
+    {
+      "from": "village_south_rebeccaland",
+      "to": "village_west_michaelville",
+      "time": 3,
+      "cost": 1.6,
+      "distance": 1.5
+    },
+    {
+      "from": "village_new_jennifer",
+      "to": "village_lake_elaine",
+      "time": 4,
+      "cost": 3.6,
+      "distance": 1.3
+    },
+    {
+      "from": "village_port_hannahview",
+      "to": "village_lake_bridgetburgh",
+      "time": 1,
+      "cost": 3.4,
+      "distance": 2.8
+    },
+    {
+      "from": "village_benjaminstad",
+      "to": "village_hendersonhaven",
+      "time": 5,
+      "cost": 4.5,
+      "distance": 2.9
+    },
+    {
+      "from": "village_benjaminstad",
+      "to": "village_south_julieville",
+      "time": 3,
+      "cost": 4.5,
+      "distance": 2.5
+    },
+    {
+      "from": "village_davisborough",
+      "to": "village_johnchester",
+      "time": 3,
+      "cost": 3.9,
+      "distance": 2.5
+    },
+    {
+      "from": "village_davisborough",
+      "to": "village_south_julieville",
+      "time": 2,
+      "cost": 3.7,
+      "distance": 3.3
+    },
+    {
+      "from": "village_hendersonhaven",
+      "to": "city_hansenton",
+      "time": 3,
+      "cost": 4.0,
+      "distance": 2.9
+    },
+    {
+      "from": "village_sarahland",
+      "to": "village_andersonmouth",
+      "time": 2,
+      "cost": 2.0,
+      "distance": 1.5
+    },
+    {
+      "from": "village_sarahland",
+      "to": "village_east_micheal",
+      "time": 5,
+      "cost": 2.1,
+      "distance": 2.3
+    },
+    {
+      "from": "village_lake_elaine",
+      "to": "village_dustinhaven",
+      "time": 1,
+      "cost": 1.2,
+      "distance": 1.7
+    },
+    {
+      "from": "village_lake_elaine",
+      "to": "village_michaelton",
+      "time": 5,
+      "cost": 3.6,
+      "distance": 1.3
+    },
+    {
+      "from": "village_east_micheal",
+      "to": "village_leebury",
+      "time": 2,
+      "cost": 3.0,
+      "distance": 1.3
+    },
+    {
+      "from": "village_east_micheal",
+      "to": "village_johnchester",
+      "time": 3,
+      "cost": 1.5,
+      "distance": 4.6
+    },
+    {
+      "from": "village_dustinhaven",
+      "to": "village_andersonmouth",
+      "time": 2,
+      "cost": 4.5,
+      "distance": 1.1
+    },
+    {
+      "from": "village_michaelton",
+      "to": "village_andersonmouth",
+      "time": 5,
+      "cost": 3.0,
+      "distance": 1.7
+    },
+    {
+      "from": "village_johnchester",
+      "to": "village_lake_angela",
+      "time": 2,
+      "cost": 3.6,
+      "distance": 3.5
+    },
+    {
+      "from": "village_south_christopher",
+      "to": "village_port_hannahview",
+      "time": 2,
+      "cost": 1.9,
+      "distance": 2.7
+    },
+    {
+      "from": "village_south_ryan",
+      "to": "city_roberttown",
+      "time": 1,
+      "cost": 4.1,
+      "distance": 4.9
+    }
+  ]
+}

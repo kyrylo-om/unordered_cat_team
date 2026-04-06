@@ -23,6 +23,7 @@ from .models import (
     WarehouseCredential,
     ShopCredential,
     NetworkDefinition,
+    Route,
 )
 from .user_roles import DEFAULT_ROLE, ROLE_CHOICES, get_user_role, set_user_role
 from .store_account_service import StoreAccountService
@@ -110,13 +111,13 @@ admin.site.register(User, UserRoleAdmin)
 
 @admin.register(Warehouse)
 class WarehouseAdmin(admin.ModelAdmin):
-    list_display = ("name", "node_id", "network_definition", "get_username")
+    list_display = ("name", "node_id", "inventory", "network_definition", "get_username")
     list_filter = ("network_definition__name",)
     search_fields = ("name", "node_id")
     readonly_fields = ("created_at", "updated_at", "get_credentials_display")
 
     fieldsets = (
-        (None, {"fields": ("name", "node_id", "network_definition", "user")}),
+        (None, {"fields": ("name", "node_id", "inventory", "network_definition", "user")}),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
         ("Credentials", {"fields": ("get_credentials_display",), "classes": ("collapse",)}),
     )
@@ -178,13 +179,34 @@ class WarehouseAdmin(admin.ModelAdmin):
 
 @admin.register(Shop)
 class ShopAdmin(admin.ModelAdmin):
-    list_display = ("name", "node_id", "inventory", "network_definition", "get_username")
+    list_display = (
+        "name",
+        "node_id",
+        "inventory",
+        "target",
+        "demand_rate",
+        "network_definition",
+        "get_username",
+    )
     list_filter = ("network_definition__name",)
     search_fields = ("name", "node_id")
     readonly_fields = ("created_at", "updated_at", "get_credentials_display")
 
     fieldsets = (
-        (None, {"fields": ("name", "node_id", "inventory", "network_definition", "user")}),
+        (
+            None,
+            {
+                "fields": (
+                    "name",
+                    "node_id",
+                    "inventory",
+                    "target",
+                    "demand_rate",
+                    "network_definition",
+                    "user",
+                )
+            },
+        ),
         ("Timestamps", {"fields": ("created_at", "updated_at")}),
         ("Credentials", {"fields": ("get_credentials_display",), "classes": ("collapse",)}),
     )
@@ -242,6 +264,21 @@ class ShopAdmin(admin.ModelAdmin):
         return mark_safe(html)
 
     get_credentials_display.short_description = "Credentials"
+
+
+@admin.register(Route)
+class RouteAdmin(admin.ModelAdmin):
+    list_display = (
+        "edge_id",
+        "source_node_id",
+        "target_node_id",
+        "travel_time",
+        "transport_cost",
+        "network_definition",
+        "is_active",
+    )
+    list_filter = ("network_definition__name", "is_active")
+    search_fields = ("edge_id", "source_node_id", "target_node_id")
 
 
 @admin.register(NetworkDefinition)

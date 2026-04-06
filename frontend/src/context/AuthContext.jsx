@@ -21,9 +21,14 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         const data = await response.json();
-        setUser(data.user);
-        setIsAuthenticated(true);
-        setError("");
+        if (data?.authenticated === false || !data?.user) {
+          setUser(null);
+          setIsAuthenticated(false);
+        } else {
+          setUser(data.user);
+          setIsAuthenticated(true);
+          setError("");
+        }
       } else {
         setUser(null);
         setIsAuthenticated(false);

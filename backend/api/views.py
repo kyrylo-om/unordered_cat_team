@@ -1,13 +1,21 @@
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.middleware.csrf import get_token
 from django.contrib.auth import authenticate, login, logout
 from django_ratelimit.decorators import ratelimit
 import json
+import math
 
-from .models import NetworkDefinition, Warehouse, Shop
+from .models import NetworkDefinition, Warehouse, Shop, Route
 from .user_roles import get_user_role, ROLE_WAREHOUSE_WORKER, ROLE_SHOP_WORKER
 from .json_parser import parse_network_json
+from .realtime import (
+    broadcast_node_update,
+    get_edge_activity_snapshot,
+    resolve_reverse_edge_id,
+    resolve_route_edge_id,
+)
 
 
 def _definition_order(definition, key):
@@ -17,6 +25,45 @@ def _definition_order(definition, key):
         for index, item in enumerate(values)
         if isinstance(item, dict) and item.get("id") is not None
     }
+
+
+def _edge_duration_from_time(travel_time):
+    tick_seconds = float(getattr(settings, "SIMULATION_TICK_SECONDS", 1))
+    try:
+        seconds = max(0.2, float(travel_time) * tick_seconds)
+    except (TypeError, ValueError):
+        seconds = max(0.2, tick_seconds)
+
+    return f"{seconds:.2f}s"
+
+
+def _route_tick_count(distance_value=None, time_value=None):
+    distance = None
+    if distance_value is not None:
+        try:
+            distance = float(distance_value)
+        except (TypeError, ValueError):
+            distance = None
+
+    if distance is not None and distance > 0:
+        return max(1, int(math.ceil(distance)))
+
+    try:
+        route_time = float(time_value)
+    except (TypeError, ValueError):
+        route_time = 1.0
+
+    if route_time <= 0:
+        route_time = 1.0
+
+    return max(1, int(math.ceil(route_time)))
+
+
+def _active_network_definition():
+    network = NetworkDefinition.objects.filter(is_active=True).first()
+    if network is None:
+        network = NetworkDefinition.objects.first()
+    return network
 
 
 def _load_network_definition(network):
@@ -102,6 +149,13 @@ def _edge_payload(source, target, index, route_data=None):
 
     if "status" not in data:
         data["status"] = "idle"
+
+    route_time = _route_tick_count(
+        route_data.get("distance"),
+        route_data.get("time", route_data.get("travel_time", 1)),
+    )
+    data["time"] = route_time
+    data["duration"] = _edge_duration_from_time(route_time)
 
     return {
         "id": str(edge_id),
@@ -245,7 +299,8 @@ def map_layout_view(request):
             "id": warehouse.node_id,
             "data": {
                 "label": warehouse.name,
-                "type": "warehouse"
+                "type": "warehouse",
+                "inventory": warehouse.inventory,
             },
             "position": _node_position(warehouse_positions.get(str(warehouse.node_id))),
         })
@@ -258,21 +313,102 @@ def map_layout_view(request):
             str(shop.node_id),
         ),
     )
+    shop_node_ids = {str(shop.node_id) for shop in shops}
     for shop in shops:
         nodes.append({
             "id": shop.node_id,
             "data": {
                 "label": shop.name,
                 "type": "shop",
-                "inventory": shop.inventory
+                "inventory": shop.inventory,
+                "target": shop.target,
+                "demandRate": shop.demand_rate,
             },
             "position": _node_position(shop_positions.get(str(shop.node_id))),
         })
 
     node_id_set = {str(node["id"]) for node in nodes}
-    edges = _build_definition_edges(definition, node_id_set)
-    if not edges:
-        edges = _build_generated_edges(warehouses, shops)
+    edge_activity = get_edge_activity_snapshot()
+    routes_bidirectional = bool(getattr(settings, "SIMULATION_ROUTES_BIDIRECTIONAL", True))
+    route_rows = Route.objects.filter(network_definition=network, is_active=True).order_by("id")
+    if route_rows.exists():
+        edges = []
+        for index, route in enumerate(route_rows):
+            source = str(route.source_node_id)
+            target = str(route.target_node_id)
+            if source not in node_id_set or target not in node_id_set:
+                continue
+
+            edge_id = resolve_route_edge_id(route, fallback_index=index)
+            route_meta = route.metadata if isinstance(route.metadata, dict) else {}
+            route_time = _route_tick_count(route_meta.get("distance"), route.travel_time)
+            base_data = {
+                **route_meta,
+                "status": route_meta.get("status", "idle"),
+                "time": route_time,
+                "cost": route.transport_cost,
+                "duration": _edge_duration_from_time(route_time),
+                "targetType": "shop" if target in shop_node_ids else "warehouse",
+            }
+            edges.append(
+                {
+                    "id": edge_id,
+                    "source": source,
+                    "target": target,
+                    "type": "moving",
+                    "data": {
+                        **base_data,
+                        **edge_activity.get(str(edge_id), {}),
+                    },
+                }
+            )
+    else:
+        edges = _build_definition_edges(definition, node_id_set)
+        if not edges:
+            edges = _build_generated_edges(warehouses, shops)
+
+    if routes_bidirectional and edges:
+        existing_pairs = {(str(edge["source"]), str(edge["target"])) for edge in edges}
+        reverse_edges = []
+        for edge in edges:
+            source = str(edge.get("source"))
+            target = str(edge.get("target"))
+            if (target, source) in existing_pairs:
+                continue
+
+            edge_id = str(edge.get("id"))
+            edge_data = edge.get("data") or {}
+            route_time = _route_tick_count(
+                edge_data.get("distance"),
+                edge_data.get("time", edge_data.get("travel_time", 1)),
+            )
+            reverse_edge_id = resolve_reverse_edge_id(edge_id)
+            reverse_edges.append(
+                {
+                    "id": reverse_edge_id,
+                    "source": target,
+                    "target": source,
+                    "type": "moving",
+                    "data": {
+                        **edge_data,
+                        "status": str(edge_data.get("status", "idle")),
+                        "time": route_time,
+                        "duration": _edge_duration_from_time(route_time),
+                        "targetType": "shop" if source in shop_node_ids else "warehouse",
+                    },
+                }
+            )
+            existing_pairs.add((target, source))
+
+        edges.extend(reverse_edges)
+
+    for edge in edges:
+        edge_state = edge_activity.get(str(edge.get("id")), {})
+        if edge_state:
+            edge["data"] = {
+                **(edge.get("data") or {}),
+                **edge_state,
+            }
 
     return JsonResponse(
         {
@@ -336,11 +472,12 @@ def login_view(request):
 def check_auth_view(request):
     """Check if user is authenticated and return user data."""
     if not request.user.is_authenticated:
-        return JsonResponse({"error": "Not authenticated"}, status=401)
+        return JsonResponse({"authenticated": False, "user": None})
 
     user = request.user
     return JsonResponse(
         {
+            "authenticated": True,
             "user": {
                 "id": user.id,
                 "username": user.username,
@@ -383,7 +520,9 @@ def store_status_view(request):
                 "name": warehouse.name,
                 "nodeId": warehouse.node_id,
                 "type": "warehouse",
-                "inventory": None,  # Warehouses don't have inventory field
+                "inventory": warehouse.inventory,
+                "target": None,
+                "demandRate": 0,
             }
         )
 
@@ -396,6 +535,8 @@ def store_status_view(request):
                 "nodeId": shop.node_id,
                 "type": "shop",
                 "inventory": shop.inventory,
+                "target": shop.target,
+                "demandRate": shop.demand_rate,
             }
         )
 
@@ -407,54 +548,68 @@ def store_status_view(request):
 @require_http_methods(["POST"])
 def store_demand_view(request):
     """
-    Update inventory or demand level for a shop/warehouse.
+    Update store simulation inputs for the authenticated shop worker.
 
-    Accepts JSON: {"inventory": <number>} for shops
-    Accessible to both warehouse and shop workers for their own location.
+    Accepts JSON: {"target": <number>, "demandRate": <number>}
+    Optionally accepts inventory override as {"inventory": <number>}.
     """
     if not request.user.is_authenticated:
         return JsonResponse({"error": "Not authenticated"}, status=401)
 
     role = get_user_role(request.user.id)
-    if role not in [ROLE_WAREHOUSE_WORKER, ROLE_SHOP_WORKER]:
+    if role != ROLE_SHOP_WORKER:
         return JsonResponse(
-            {"error": "Unauthorized - warehouse/shop worker access only"}, status=403
+            {"error": "Unauthorized - shop worker access only"}, status=403
         )
 
     try:
         data = json.loads(request.body)
-        inventory_level = data.get("inventory")
+        target_value = data.get("target")
+        demand_rate_value = data.get("demandRate", data.get("demand_rate"))
+        inventory_value = data.get("inventory")
 
-        if inventory_level is None:
+        if (
+            target_value is None
+            and demand_rate_value is None
+            and inventory_value is None
+        ):
             return JsonResponse(
-                {"error": "inventory field is required"}, status=400
+                {"error": "At least one of target, demandRate, inventory is required"}, status=400
             )
 
-        # Try to update warehouse first (warehouses can have inventory too)
-        warehouse = Warehouse.objects.filter(user_id=request.user.id).first()
-        if warehouse:
-            # For now, warehouses don't persist inventory
-            return JsonResponse(
-                {
-                    "success": True,
-                    "name": warehouse.name,
-                    "type": "warehouse",
-                    "message": "Update received (not persisted yet)",
-                }
-            )
-
-        # Try to update shop
         shop = Shop.objects.filter(user_id=request.user.id).first()
         if shop:
-            shop.inventory = max(0, int(inventory_level))
+            if target_value is not None:
+                shop.target = max(0, int(target_value))
+
+            if demand_rate_value is not None:
+                shop.demand_rate = max(0, int(demand_rate_value))
+
+            if inventory_value is not None:
+                shop.inventory = max(0, int(inventory_value))
+
             shop.save()
+
+            broadcast_node_update(
+                shop.node_id,
+                {
+                    "label": shop.name,
+                    "type": "shop",
+                    "inventory": shop.inventory,
+                    "target": shop.target,
+                    "demandRate": shop.demand_rate,
+                },
+            )
+
             return JsonResponse(
                 {
                     "success": True,
                     "name": shop.name,
                     "type": "shop",
                     "inventory": shop.inventory,
-                    "message": "Inventory updated successfully",
+                    "target": shop.target,
+                    "demandRate": shop.demand_rate,
+                    "message": "Store simulation settings updated successfully",
                 }
             )
 
@@ -465,7 +620,131 @@ def store_demand_view(request):
     except json.JSONDecodeError:
         return JsonResponse({"error": "Invalid JSON"}, status=400)
     except (ValueError, TypeError):
-        return JsonResponse({"error": "inventory must be a number"}, status=400)
+        return JsonResponse(
+            {"error": "target, demandRate, and inventory must be numbers"},
+            status=400,
+        )
+    except Exception as e:
+        return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
+
+
+@require_http_methods(["POST"])
+def simulation_node_metrics_view(request):
+    """
+    Update simulation metrics for a selected node from manager Details Panel.
+
+    Accepts JSON:
+    {
+        "nodeId": "...",
+        "inventory": <number>,
+        "target": <number>,
+        "demandRate": <number>
+    }
+    """
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Not authenticated"}, status=401)
+
+    role = get_user_role(request.user.id)
+    if role == ROLE_SHOP_WORKER:
+        return JsonResponse(
+            {"error": "Unauthorized - manager/warehouse access only"},
+            status=403,
+        )
+
+    try:
+        data = json.loads(request.body)
+        node_id = data.get("nodeId", data.get("id"))
+        inventory_value = data.get("inventory")
+        target_value = data.get("target")
+        demand_rate_value = data.get("demandRate", data.get("demand_rate"))
+
+        if node_id is None:
+            return JsonResponse({"error": "nodeId is required"}, status=400)
+
+        if (
+            inventory_value is None
+            and target_value is None
+            and demand_rate_value is None
+        ):
+            return JsonResponse(
+                {"error": "At least one of inventory, target, demandRate is required"},
+                status=400,
+            )
+
+        network = _active_network_definition()
+        if network is None:
+            return JsonResponse({"error": "Network is not configured"}, status=404)
+
+        node_id = str(node_id)
+
+        warehouse = Warehouse.objects.filter(
+            network_definition=network,
+            node_id=node_id,
+        ).first()
+        if warehouse:
+            if inventory_value is not None:
+                warehouse.inventory = max(0, int(inventory_value))
+                warehouse.save(update_fields=["inventory", "updated_at"])
+
+            payload = {
+                "label": warehouse.name,
+                "type": "warehouse",
+                "inventory": warehouse.inventory,
+            }
+            broadcast_node_update(warehouse.node_id, payload)
+            return JsonResponse(
+                {
+                    "success": True,
+                    "node": {
+                        "id": warehouse.node_id,
+                        "data": payload,
+                    },
+                }
+            )
+
+        shop = Shop.objects.filter(
+            network_definition=network,
+            node_id=node_id,
+        ).first()
+        if shop:
+            if inventory_value is not None:
+                shop.inventory = max(0, int(inventory_value))
+
+            if target_value is not None:
+                shop.target = max(0, int(target_value))
+
+            if demand_rate_value is not None:
+                shop.demand_rate = max(0, int(demand_rate_value))
+
+            shop.save(update_fields=["inventory", "target", "demand_rate", "updated_at"])
+
+            payload = {
+                "label": shop.name,
+                "type": "shop",
+                "inventory": shop.inventory,
+                "target": shop.target,
+                "demandRate": shop.demand_rate,
+            }
+            broadcast_node_update(shop.node_id, payload)
+            return JsonResponse(
+                {
+                    "success": True,
+                    "node": {
+                        "id": shop.node_id,
+                        "data": payload,
+                    },
+                }
+            )
+
+        return JsonResponse({"error": "Node not found"}, status=404)
+
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+    except (ValueError, TypeError):
+        return JsonResponse(
+            {"error": "inventory, target, and demandRate must be numbers"},
+            status=400,
+        )
     except Exception as e:
         return JsonResponse({"error": f"An error occurred: {str(e)}"}, status=500)
 

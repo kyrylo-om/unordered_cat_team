@@ -41,6 +41,7 @@ class Warehouse(models.Model):
     user = models.OneToOneField(
         User, on_delete=models.CASCADE, null=True, blank=True, unique=True
     )
+    inventory = models.PositiveIntegerField(default=500)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -63,6 +64,8 @@ class Shop(models.Model):
         User, on_delete=models.CASCADE, null=True, blank=True, unique=True
     )
     inventory = models.PositiveIntegerField(default=0)
+    target = models.PositiveIntegerField(default=120)
+    demand_rate = models.PositiveIntegerField(default=5)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
@@ -107,3 +110,31 @@ class ShopCredential(models.Model):
 
     def __str__(self):
         return f"{self.username} ({self.shop.name})"
+
+
+class Route(models.Model):
+    network_definition = models.ForeignKey(
+        NetworkDefinition,
+        on_delete=models.CASCADE,
+        related_name="routes",
+    )
+    edge_id = models.CharField(max_length=100, blank=True, default="")
+    source_node_id = models.CharField(max_length=50)
+    target_node_id = models.CharField(max_length=50)
+    travel_time = models.PositiveIntegerField(default=1)
+    transport_cost = models.FloatField(default=1.0)
+    metadata = models.JSONField(default=dict, blank=True)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = [["network_definition", "source_node_id", "target_node_id"]]
+        indexes = [
+            models.Index(fields=["network_definition_id"]),
+            models.Index(fields=["source_node_id", "target_node_id"]),
+            models.Index(fields=["is_active"]),
+        ]
+
+    def __str__(self):
+        return f"{self.source_node_id} -> {self.target_node_id}"

@@ -1,6 +1,0 @@
-graph Data {
-    0 -- 1 [distance=3.23];
-    0 -- 3 [distance=8.8];
-    0 -- 2 [distance=1.45];
-    1 -- 4 [distance=3.78];
-}

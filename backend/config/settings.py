@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -27,12 +28,14 @@ DEBUG = True
 ALLOWED_HOSTS = ["127.0.0.1", "localhost", "127.0.0.1:8000", "testserver"]
 
 INSTALLED_APPS = [
+    "daphne",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "channels",
     "corsheaders",
     "api",
 ]
@@ -49,6 +52,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = "config.urls"
+ASGI_APPLICATION = "config.asgi.application"
 
 TEMPLATES = [
     {
@@ -117,6 +121,31 @@ STATIC_URL = "static/"
 MEDIA_URL = "media/"
 MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels.layers.InMemoryChannelLayer",
+    }
+}
+
+
+def _env_bool(name, default="0"):
+    return str(os.environ.get(name, default)).strip().lower() in {
+        "1",
+        "true",
+        "yes",
+        "on",
+    }
+
+
+SIMULATION_AUTOSTART = _env_bool("SIMULATION_AUTOSTART", "1")
+SIMULATION_TICK_SECONDS = float(os.environ.get("SIMULATION_TICK_SECONDS", "1"))
+SIMULATION_HORIZON = int(os.environ.get("SIMULATION_HORIZON", "5"))
+SIMULATION_VEHICLE_CAP = int(os.environ.get("SIMULATION_VEHICLE_CAP", "100"))
+SIMULATION_ROUTES_BIDIRECTIONAL = _env_bool("SIMULATION_ROUTES_BIDIRECTIONAL", "1")
+SIMULATION_MAX_TRUCKS_PER_ROUTE_TICK = int(
+    os.environ.get("SIMULATION_MAX_TRUCKS_PER_ROUTE_TICK", "3")
+)
 
 # CORS configuration
 CORS_ALLOWED_ORIGINS = [

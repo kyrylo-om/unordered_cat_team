@@ -1,4 +1,5 @@
 import logging
+import math
 import secrets
 import string
 
@@ -8,6 +9,31 @@ from django.core.exceptions import ValidationError
 from django.db import transaction
 
 logger = logging.getLogger(__name__)
+
+
+def _route_tick_count(route_data):
+    distance_value = route_data.get("distance")
+    if distance_value is not None:
+        try:
+            distance = float(distance_value)
+            if distance > 0:
+                return max(1, int(math.ceil(distance)))
+        except (TypeError, ValueError):
+            pass
+
+    for key in ("time", "travel_time"):
+        value = route_data.get(key)
+        if value is None:
+            continue
+        try:
+            route_time = float(value)
+        except (TypeError, ValueError):
+            continue
+
+        if route_time > 0:
+            return max(1, int(math.ceil(route_time)))
+
+    return 1
 
 
 class StoreAccountService:
@@ -90,7 +116,13 @@ class StoreAccountService:
         Raises:
                 Exception: Database or account creation errors
         """
-        from .models import Warehouse, Shop, WarehouseCredential, ShopCredential
+        from .models import (
+            Warehouse,
+            Shop,
+            WarehouseCredential,
+            ShopCredential,
+            Route,
+        )
 
         created_credentials = []
         shared_password = network_definition.shared_password
@@ -121,6 +153,9 @@ class StoreAccountService:
 
                 existing_shops.delete()
 
+                # Delete existing topology routes for this network
+                Route.objects.filter(network_definition=network_definition).delete()
+
                 # Delete associated users
                 all_user_ids = warehouse_user_ids + shop_user_ids
                 if all_user_ids:
@@ -130,6 +165,7 @@ class StoreAccountService:
                 for warehouse_data in parsed_definition.get("warehouses", []):
                     warehouse_id = warehouse_data["id"]
                     warehouse_name = warehouse_data["name"]
+                    warehouse_inventory = max(0, int(warehouse_data.get("inventory", 500)))
                     username = StoreAccountService._sanitize_username(warehouse_id)
 
                     # Ensure username uniqueness
@@ -153,6 +189,7 @@ class StoreAccountService:
                         node_id=warehouse_id,
                         network_definition=network_definition,
                         user=user,
+                        inventory=warehouse_inventory,
                     )
 
                     # Set role
@@ -183,6 +220,9 @@ class StoreAccountService:
                     shop_id = shop_data["id"]
                     shop_name = shop_data["name"]
                     shop_inventory = shop_data.get("inventory", 0)
+                    # Planning inputs are initialized to zero and later updated by shop workers.
+                    shop_target = 0
+                    shop_demand_rate = 0
                     username = StoreAccountService._sanitize_username(shop_id)
 
                     # Ensure username uniqueness
@@ -206,7 +246,9 @@ class StoreAccountService:
                         node_id=shop_id,
                         network_definition=network_definition,
                         user=user,
-                        inventory=shop_inventory,
+                        inventory=max(0, int(shop_inventory)),
+                        target=max(0, int(shop_target)),
+                        demand_rate=max(0, int(shop_demand_rate)),
                     )
 
                     # Set role
@@ -230,6 +272,52 @@ class StoreAccountService:
                     logger.info(
                         f"Created shop account: username={username}, shop={shop_name}"
                     )
+
+                # Persist route topology for simulation and websocket updates
+                for route_index, route_data in enumerate(parsed_definition.get("routes", [])):
+                    source_id = str(route_data["from"])
+                    target_id = str(route_data["to"])
+                    travel_time = _route_tick_count(route_data)
+                    transport_cost = float(route_data.get("cost", 1.0))
+
+                    metadata = {
+                        key: value
+                        for key, value in route_data.items()
+                        if key
+                        not in {
+                            "id",
+                            "from",
+                            "to",
+                            "source",
+                            "target",
+                            "time",
+                            "cost",
+                        }
+                    }
+
+                    edge_id = str(
+                        route_data.get("id")
+                        or route_data.get("edgeId")
+                        or route_data.get("edge_id")
+                        or f"edge-{source_id}-{target_id}-{route_index}"
+                    )
+
+                    Route.objects.create(
+                        network_definition=network_definition,
+                        edge_id=edge_id,
+                        source_node_id=source_id,
+                        target_node_id=target_id,
+                        travel_time=travel_time,
+                        transport_cost=transport_cost,
+                        metadata=metadata,
+                        is_active=True,
+                    )
+
+                logger.info(
+                    "Persisted %s routes for network=%s",
+                    len(parsed_definition.get("routes", [])),
+                    network_definition.name,
+                )
 
         except Exception as e:
             logger.error(f"Error creating accounts from JSON: {e}")

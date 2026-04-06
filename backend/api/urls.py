@@ -9,6 +9,7 @@ from .views import (
     map_layout_view,
     store_status_view,
     store_demand_view,
+    simulation_node_metrics_view,
     change_password_view,
 )
 
@@ -22,4 +23,5 @@ urlpatterns = [
     path("auth/change-password/", change_password_view),
     path("store/status", store_status_view),
     path("store/demand", store_demand_view),
+    path("simulation/node-metrics", simulation_node_metrics_view),
 ]
